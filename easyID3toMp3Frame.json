@@ -1,0 +1,213 @@
+[
+  {
+    "easyID3_key": "album",
+    "mp3_frame": "TALB",
+    "description": "Album name",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "albumartist",
+    "mp3_frame": "TPE2",
+    "description": "Album artist",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "albumartistsort",
+    "mp3_frame": "TSO2",
+    "description": "Album artist sort order",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "albumsort",
+    "mp3_frame": "TSOA",
+    "description": "Album sort order",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "artist",
+    "mp3_frame": "TPE1",
+    "description": "Lead artist/performer",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "artistsort",
+    "mp3_frame": "TSOP",
+    "description": "Artist sort order",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "author",
+    "mp3_frame": "TEXT",
+    "description": "Lyricist/text writer",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "bpm",
+    "mp3_frame": "TBPM",
+    "description": "Beats per minute",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "composer",
+    "mp3_frame": "TCOM",
+    "description": "Composer",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "composersort",
+    "mp3_frame": "TSOC",
+    "description": "Composer sort order",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "conductor",
+    "mp3_frame": "TPE3",
+    "description": "Conductor",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "copyright",
+    "mp3_frame": "TCOP",
+    "description": "Copyright",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "discnumber",
+    "mp3_frame": "TPOS",
+    "description": "Disc number",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "discsubtitle",
+    "mp3_frame": "TSST",
+    "description": "Set subtitle",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "encodedby",
+    "mp3_frame": "TENC",
+    "description": "Encoded by",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "genre",
+    "mp3_frame": "TCON",
+    "description": "Genre",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "isrc",
+    "mp3_frame": "TSRC",
+    "description": "ISRC code",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "language",
+    "mp3_frame": "TLAN",
+    "description": "Language",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "length",
+    "mp3_frame": "TLEN",
+    "description": "Length in milliseconds",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "lyricist",
+    "mp3_frame": "TEXT",
+    "description": "Lyricist",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "media",
+    "mp3_frame": "TMED",
+    "description": "Media type",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "mood",
+    "mp3_frame": "TMOO",
+    "description": "Mood",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "organization",
+    "mp3_frame": "TPUB",
+    "description": "Publisher",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "title",
+    "mp3_frame": "TIT2",
+    "description": "Title",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "titlesort",
+    "mp3_frame": "TSOT",
+    "description": "Title sort order",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "tracknumber",
+    "mp3_frame": "TRCK",
+    "description": "Track number",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "version",
+    "mp3_frame": "TIT3",
+    "description": "Subtitle/version/refinement",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "website",
+    "mp3_frame": "WOAR",
+    "description": "Official artist/performer webpage",
+    "category": " Basic text frames"
+  },
+  {
+    "easyID3_key": "date",
+    "mp3_frame": "TDRC",
+    "description": "Recording time",
+    "category": " Date frames (ID3v2.4)"
+  },
+  {
+    "easyID3_key": "originaldate",
+    "mp3_frame": "TDOR",
+    "description": "Original release time",
+    "category": " Date frames (ID3v2.4)"
+  },
+  {
+    "easyID3_key": "releasedate",
+    "mp3_frame": "TDRL",
+    "description": "Release time",
+    "category": " Date frames (ID3v2.4)"
+  },
+  {
+    "easyID3_key": "compilation",
+    "mp3_frame": "TCMP",
+    "description": "iTunes compilation flag",
+    "category": " Multi-value text frames (TXXX - user-defined)"
+  },
+  {
+    "easyID3_key": "label",
+    "mp3_frame": "TPUB",
+    "description": "Record label",
+    "category": " Multi-value text frames (TXXX - user-defined)"
+  },
+  {
+    "easyID3_key": "performer",
+    "mp3_frame": "TMCL",
+    "description": "Musician credits list (or TXXX)",
+    "category": " Multi-value text frames (TXXX - user-defined)"
+  },
+  {
+    "easyID3_key": "replaygain_*_gain",
+    "mp3_frame": "TXXX:replaygain_*_gain",
+    "description": "ReplayGain",
+    "category": " Multi-value text frames (TXXX - user-defined)"
+  }
+]
+

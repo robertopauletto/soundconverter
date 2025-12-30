@@ -1,0 +1,12 @@
+[project]
+name = "soundconverter"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.3"
+dependencies = [
+    "loguru>=0.7.3",
+    "pydub>=0.25.1",
+    "PySide6>=6.4.0",
+    "mutagen>=1.47.0",
+]
