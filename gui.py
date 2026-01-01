@@ -10,14 +10,14 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QDialog, # Added import
-    QTextEdit, # Added import
-    QScrollArea, # Added import
+    QDialog,
+    QTextEdit,
+    QScrollArea,
     QMessageBox,
     QProgressBar,
     QPushButton,
     QVBoxLayout,
-    QWidget,
+    QWidget, QMainWindow,
 )
 
 from main import batch_convert, DependencyMissing
@@ -38,14 +38,14 @@ class Worker(QThread):
         """Runs the conversion in a separate thread."""
         try:
             for progress, log_message in batch_convert(
-                self.folder, 'flac', 'mp3', bitrate=self.bitrate
+                self.folder, bitrate=self.bitrate
             ):
                 self.progress.emit(progress)
                 self.log.emit(log_message)
 
             if self.delete_originals:
                 self.log.emit("Deleting original files...")
-                for flac_file in Path(self.folder).glob('*.flac'):
+                for flac_file in Path(self.folder).glob("*.flac"):
                     flac_file.unlink()
                     self.log.emit(f"Deleted {flac_file.name}")
         except DependencyMissing as e:
@@ -56,11 +56,13 @@ class Worker(QThread):
             self.finished.emit()
 
 
-class MainWindow(QWidget):
+class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sound Converter")
-        self.layout = QVBoxLayout(self)
+        self.setGeometry(100, 100, 500, 200)
+        container = QWidget()
+        self.layout = QVBoxLayout()
 
         # Folder selection
         folder_layout = QHBoxLayout()
@@ -75,28 +77,37 @@ class MainWindow(QWidget):
         self.layout.addLayout(folder_layout)
 
         # Options
-        options_layout = QHBoxLayout()
+        option_delete_layout = QHBoxLayout()
         self.delete_checkbox = QCheckBox("Delete original FLAC files after conversion")
-        self.delete_checkbox.setChecked(True)
+        self.delete_checkbox.setChecked(False)
+        option_delete_layout.addWidget(self.delete_checkbox)
+        option_delete_layout.addStretch()
+
+        option_bitrate_layout = QHBoxLayout()
         self.bitrate_label = QLabel("MP3 Bitrate:")
+        self.bitrate_label.setToolTip("Conversion bitrate - 192k is a good balance between quality and file size")
         self.bitrate_combo = QComboBox()
         self.bitrate_combo.addItems(["128k", "192k", "256k", "320k"])
         self.bitrate_combo.setCurrentText("192k")
-        options_layout.addWidget(self.delete_checkbox)
-        options_layout.addStretch()
-        options_layout.addWidget(self.bitrate_label)
-        options_layout.addWidget(self.bitrate_combo)
-        self.layout.addLayout(options_layout)
+        option_bitrate_layout.addWidget(self.bitrate_label)
+        option_bitrate_layout.addWidget(self.bitrate_combo)
+        option_bitrate_layout.addStretch()
+
+        self.layout.addLayout(option_delete_layout)
+        self.layout.addLayout(option_bitrate_layout)
 
         # Progress bar
-        self.progress_bar = QProgressBar()
+        self.progress_bar = QProgressBar(value=0)
         self.layout.addWidget(self.progress_bar)
 
         # Convert button
         self.convert_button = QPushButton("Convert")
+        self.convert_button.setEnabled(False)
         self.convert_button.clicked.connect(self.start_conversion)
         self.layout.addWidget(self.convert_button)
 
+        container.setLayout(self.layout)
+        self.setCentralWidget(container)
         self.log_messages = []
 
     @Slot()
@@ -104,6 +115,7 @@ class MainWindow(QWidget):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
         if folder:
             self.folder_path.setText(folder)
+            self.convert_button.setEnabled(True)
 
     @Slot()
     def start_conversion(self):
@@ -142,10 +154,10 @@ class MainWindow(QWidget):
 
         log_dialog = QDialog(self)
         log_dialog.setWindowTitle("Conversion Log")
-        log_dialog.resize(600, 400) # Set a default size
+        log_dialog.resize(600, 400)  # Set a default size
 
         dialog_layout = QVBoxLayout(log_dialog)
-        
+
         log_text_edit = QTextEdit()
         log_text_edit.setReadOnly(True)
         log_text_edit.setText(log_text)
@@ -153,13 +165,18 @@ class MainWindow(QWidget):
         scroll_area = QScrollArea()
         scroll_area.setWidgetResizable(True)
         scroll_area.setWidget(log_text_edit)
-        
+
         dialog_layout.addWidget(scroll_area)
 
         close_button = QPushButton("Close")
         close_button.clicked.connect(log_dialog.accept)
         dialog_layout.addWidget(close_button)
 
-        log_dialog.exec() # Use exec() for modal dialog
-        
+        log_dialog.exec()  # Use exec() for modal dialog
+
         self.log_messages = []
+
+app = QApplication([])
+window = MainWindow()
+window.show()
+app.exec()
