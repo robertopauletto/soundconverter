@@ -1,10 +1,12 @@
 import json
+from os import path
 import pathlib
 
 from mutagen import id3
 from mutagen.flac import FLAC
 from mutagen.easyid3 import EasyID3
-from mutagen.id3 import ID3, APIC
+from mutagen.id3 import ID3
+from mutagen.id3._frames import APIC
 
 ID3_KEYS = EasyID3.valid_keys.keys()
 
@@ -29,7 +31,7 @@ def load_tag_mapping(filename: str = "./easyID3toMp3Frame.json") -> dict:
         raise IOError(f"{prompt}: {ioerr}")
 
 
-class TagMappins:
+class TagMappings:
     """A class to handle mappings between EasyID3 tags and MP3 frames."""
 
     def __init__(self, filename: str = "./easyID3toMp3Frame.json"):
@@ -62,15 +64,15 @@ class TagMappins:
         Raises:
             ValueError: If the easy_id3_tag is not a valid EasyID3 tag.
         """
-        if not easy_id3_tag.lower() in self.easy_id3_tags:
+        if easy_id3_tag.lower() not in self.easy_id3_tags:
             raise ValueError(f"{easy_id3_tag} not an EasyID3 tag")
         result = [
             item for item in self._tag_mappings if item["easyID3_key"] == easy_id3_tag
         ]
-        return result[0]["mp3_frame"], result[0]["description"].replace("#", "")
+        return result[0]["mp3_frame"], result[0]["description"]
 
 
-def get_flac_tags(filename: str) -> tuple[dict[str, str], list]:
+def get_flac_tags(filename: str | pathlib.Path) -> tuple[dict, list]:
     """Gets the tags and pictures from a FLAC file.
 
     Args:
@@ -80,7 +82,7 @@ def get_flac_tags(filename: str) -> tuple[dict[str, str], list]:
         A tuple containing a dictionary of tags and a list of pictures.
     """
     audio = FLAC(filename)
-    return audio.tags, audio.pictures
+    return audio.tags.as_dict(), audio.pictures
 
 
 def copy_tags_to_mp3(
@@ -100,7 +102,7 @@ def copy_tags_to_mp3(
         else:
             print(message)
 
-    tm = TagMappins()
+    tm = TagMappings()
     tags, pics = get_flac_tags(flac_filename)
     mp3 = ID3(mp3_filename)
     for tag, flac_value in tags.items():

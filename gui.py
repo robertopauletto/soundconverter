@@ -28,7 +28,7 @@ class Worker(QThread):
     log = Signal(str)
     finished = Signal()
 
-    def __init__(self, folder, delete_originals, bitrate):
+    def __init__(self, folder: str, delete_originals: bool, bitrate: str):
         super().__init__()
         self.folder = folder
         self.delete_originals = delete_originals
