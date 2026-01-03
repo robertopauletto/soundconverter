@@ -109,6 +109,7 @@ def copy_tags_to_mp3(
         tag = tag.lower()
         if tag not in ID3_KEYS:
             log(f"Unable to match {tag} to a ID3 frame")
+            continue
         frame_name, frame_descr = tm.get_mp3_frame_name(tag.lower())
         frame = None
         try:

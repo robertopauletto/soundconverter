@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QThread, Signal, Slot
+from PySide6.QtCore import QThread, Signal, Slot, QObject
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -17,13 +17,15 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QVBoxLayout,
-    QWidget, QMainWindow,
+    QWidget, QMainWindow, QStatusBar,
 )
 
 from main import batch_convert, DependencyMissing
 
+AUDIO_IN = "flac"
+AUDIO_OUT = "mp3"
 
-class Worker(QThread):
+class Worker(QObject):
     progress = Signal(int)
     log = Signal(str)
     finished = Signal()
@@ -34,7 +36,8 @@ class Worker(QThread):
         self.delete_originals = delete_originals
         self.bitrate = bitrate
 
-    def run(self):
+    @Slot()
+    def run_conversion(self):
         """Runs the conversion in a separate thread."""
         try:
             for progress, log_message in batch_convert(
@@ -45,7 +48,7 @@ class Worker(QThread):
 
             if self.delete_originals:
                 self.log.emit("Deleting original files...")
-                for flac_file in Path(self.folder).glob("*.flac"):
+                for flac_file in Path(self.folder).glob(f"*.{AUDIO_IN}"):
                     flac_file.unlink()
                     self.log.emit(f"Deleted {flac_file.name}")
         except DependencyMissing as e:
@@ -56,11 +59,29 @@ class Worker(QThread):
             self.finished.emit()
 
 
+class StatusBar(QStatusBar):
+    def __init__(self, initial_msg: str = 'Ready'):
+        super().__init__()
+        self.showMessage(initial_msg)
+
+    def set_message(self, message: str):
+        self.showMessage(message)
+
+    def set_temp_message(self, message: str, ms_timeout: int):
+        self.showMessage(message, timeout=ms_timeout)
+
+    def add_permanent_widget(self, label: str, widget: QWidget):
+        self.addPermanentWidget(QLabel(label))
+        self.addPermanentWidget(widget)
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Sound Converter")
-        self.setGeometry(100, 100, 500, 200)
+        self.setGeometry(400, 400, 500, 200)
+        self.status_bar = StatusBar('Select a folder with .flac files to convert')
+        self.setStatusBar(self.status_bar)
         container = QWidget()
         self.layout = QVBoxLayout()
 
@@ -114,8 +135,10 @@ class MainWindow(QMainWindow):
     def open_folder_dialog(self):
         folder = QFileDialog.getExistingDirectory(self, "Select Folder")
         if folder:
+            flac_files = len(list(Path(folder).glob(f"*.{AUDIO_IN}")))
             self.folder_path.setText(folder)
             self.convert_button.setEnabled(True)
+            self.status_bar.set_message(f"{flac_files} flac files in selected folder")
 
     @Slot()
     def start_conversion(self):
@@ -128,15 +151,25 @@ class MainWindow(QMainWindow):
         self.progress_bar.setValue(0)
         self.log_messages = []
 
+        self.thread = QThread()
         self.worker = Worker(
             folder,
             self.delete_checkbox.isChecked(),
             self.bitrate_combo.currentText(),
         )
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run_conversion)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
         self.worker.progress.connect(self.update_progress)
         self.worker.log.connect(self.append_log)
         self.worker.finished.connect(self.conversion_finished)
-        self.worker.start()
+
+        self.thread.start()
+
 
     @Slot(int)
     def update_progress(self, value):
@@ -145,12 +178,18 @@ class MainWindow(QMainWindow):
     @Slot(str)
     def append_log(self, message):
         self.log_messages.append(message)
+        self.status_bar.set_message(message)
 
     @Slot()
     def conversion_finished(self):
         self.convert_button.setEnabled(True)
         self.progress_bar.setValue(100)
+        self.status_bar.set_message('Conversion ended')
         log_text = "\n".join(self.log_messages)
+
+        user_choice = QMessageBox.question(self, 'Conversion ended', 'Would you like to see a log?')
+        if user_choice != QMessageBox.Yes:
+            return
 
         log_dialog = QDialog(self)
         log_dialog.setWindowTitle("Conversion Log")
@@ -175,6 +214,7 @@ class MainWindow(QMainWindow):
         log_dialog.exec()  # Use exec() for modal dialog
 
         self.log_messages = []
+
 
 app = QApplication([])
 window = MainWindow()

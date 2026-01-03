@@ -81,7 +81,7 @@ def convert(
     }
     audio.export(**params)
     if out_file.exists() and out_file.stat().st_size > 0:
-        return file_out
+        return out_file
     else:
         return None
 
@@ -117,6 +117,7 @@ def batch_convert(folder: str, bitrate: str = "192k"):
 
         log_messages = []
         if converted_file:
+            yield progress, f"Adding tags to {flac_file.name}"
 
             def logger(msg):
                 log_messages.append(msg)
