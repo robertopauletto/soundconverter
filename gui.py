@@ -1,4 +1,4 @@
-import sys
+from configparser import ConfigParser
 from pathlib import Path
 
 from PySide6.QtCore import QThread, Signal, Slot, QObject
@@ -17,13 +17,21 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QVBoxLayout,
-    QWidget, QMainWindow, QStatusBar,
+    QWidget,
+    QMainWindow,
+    QStatusBar,
 )
 
 from main import batch_convert, DependencyMissing
 
 AUDIO_IN = "flac"
 AUDIO_OUT = "mp3"
+CONFIG_FILE = "config.ini"
+
+parser = ConfigParser()
+parser.read(CONFIG_FILE)
+starting_source_folder = parser.get("Paths", "starting_source_folder")
+
 
 class Worker(QObject):
     progress = Signal(int)
@@ -60,7 +68,7 @@ class Worker(QObject):
 
 
 class StatusBar(QStatusBar):
-    def __init__(self, initial_msg: str = 'Ready'):
+    def __init__(self, initial_msg: str = "Ready"):
         super().__init__()
         self.showMessage(initial_msg)
 
@@ -80,7 +88,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("Sound Converter")
         self.setGeometry(400, 400, 500, 200)
-        self.status_bar = StatusBar('Select a folder with .flac files to convert')
+        self.status_bar = StatusBar("Select a folder with .flac files to convert")
         self.setStatusBar(self.status_bar)
         container = QWidget()
         self.layout = QVBoxLayout()
@@ -106,7 +114,9 @@ class MainWindow(QMainWindow):
 
         option_bitrate_layout = QHBoxLayout()
         self.bitrate_label = QLabel("MP3 Bitrate:")
-        self.bitrate_label.setToolTip("Conversion bitrate - 192k is a good balance between quality and file size")
+        self.bitrate_label.setToolTip(
+            "Conversion bitrate - 192k is a good balance between quality and file size"
+        )
         self.bitrate_combo = QComboBox()
         self.bitrate_combo.addItems(["128k", "192k", "256k", "320k"])
         self.bitrate_combo.setCurrentText("192k")
@@ -133,7 +143,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def open_folder_dialog(self):
-        folder = QFileDialog.getExistingDirectory(self, "Select Folder")
+        folder = QFileDialog.getExistingDirectory(
+            self, "Select Folder", starting_source_folder
+        )
         if folder:
             flac_files = len(list(Path(folder).glob(f"*.{AUDIO_IN}")))
             self.folder_path.setText(folder)
@@ -170,7 +182,6 @@ class MainWindow(QMainWindow):
 
         self.thread.start()
 
-
     @Slot(int)
     def update_progress(self, value):
         self.progress_bar.setValue(value)
@@ -184,10 +195,12 @@ class MainWindow(QMainWindow):
     def conversion_finished(self):
         self.convert_button.setEnabled(True)
         self.progress_bar.setValue(100)
-        self.status_bar.set_message('Conversion ended')
+        self.status_bar.set_message("Conversion ended")
         log_text = "\n".join(self.log_messages)
 
-        user_choice = QMessageBox.question(self, 'Conversion ended', 'Would you like to see a log?')
+        user_choice = QMessageBox.question(
+            self, "Conversion ended", "Would you like to see a log?"
+        )
         if user_choice != QMessageBox.Yes:
             return
 
@@ -220,3 +233,4 @@ app = QApplication([])
 window = MainWindow()
 window.show()
 app.exec()
+
