@@ -3,7 +3,7 @@
 This project is written in Python and does one thing and one thing only: it converts audio files from FLAC to MP3 while preserving metadata tags.
 Basically I wanted to study how to execute a long running operation on a separate thread  in a Pyside6 application.
 
-For a more featured audio file converter for Linux systems you can try [SoundConverter](https://soundconverter.org) for Gnome desktops or [soundKonverter](https://store.kde.org/p/1126634) for KDE desktops.
+For a more featured audio file converter for Linux systems you can try [SoundConverter](https://soundconverter.org) for Gnome desktop or [soundKonverter](https://store.kde.org/p/1126634) for KDE desktop.
 
 ## Features
 

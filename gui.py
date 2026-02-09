@@ -1,7 +1,9 @@
 from configparser import ConfigParser
 from pathlib import Path
+from typing import Callable
 
 from PySide6.QtCore import QThread, Signal, Slot, QObject
+from PySide6.QtGui import QAction
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -19,14 +21,22 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QMainWindow,
-    QStatusBar,
+    QStatusBar, QMenuBar, QMenu,
 )
 
 from main import batch_convert, DependencyMissing
+from qtutilities.aboutbox import AboutBox, AboutParams
 
 AUDIO_IN = "flac"
 AUDIO_OUT = "mp3"
 CONFIG_FILE = "config.ini"
+APP_NAME = "Flac to Mp3 Converter"
+APP_VERSION = '1.0'
+REPO_URL = 'https://github.com/robertopauletto/soundconverter'
+REPO_TEXT = 'GitHub repository'
+ICON_PATH = './soundconverter.png'
+
+app_params = AboutParams(ICON_PATH, APP_NAME, APP_VERSION, REPO_URL)
 
 parser = ConfigParser()
 parser.read(CONFIG_FILE)
@@ -66,11 +76,26 @@ class Worker(QObject):
         finally:
             self.finished.emit()
 
+class MenuBar(QMenuBar):
+    def __init__(self, parent):
+        super().__init__(parent)
+
+        self.menus: dict[str, QMenu] = {}
+
+    def create_action(self, parent: QWidget, menu_name: str, title: str, func: Callable | None = None):
+        action = QAction(title, parent)
+        action.triggered.connect(func)
+        self.menus[menu_name].addAction(action)
+
+    def add_menu(self, menu_name: str):
+        self.menus[menu_name.replace('&', '')] = self.addMenu(menu_name)
 
 class StatusBar(QStatusBar):
     def __init__(self, initial_msg: str = "Ready"):
         super().__init__()
+        self.setStyleSheet("font-size: 12px;")
         self.showMessage(initial_msg)
+
 
     def set_message(self, message: str):
         self.showMessage(message)
@@ -78,18 +103,56 @@ class StatusBar(QStatusBar):
     def set_temp_message(self, message: str, ms_timeout: int):
         self.showMessage(message, timeout=ms_timeout)
 
-    def add_permanent_widget(self, label: str, widget: QWidget):
-        self.addPermanentWidget(QLabel(label))
+    def add_permanent_widget(self, widget: QWidget , label: str | None = None):
+        if label:
+            self.addPermanentWidget(QLabel(label))
         self.addPermanentWidget(widget)
+
+class LogWindow:
+    def __init__(self, parent: QWidget, title: str = "Log",
+                 geometry: tuple[int, int] = (600, 400),
+                 text: str = ""):
+        self.log_dialog = QDialog(parent)
+        self.log_dialog.setWindowTitle(title)
+        self.log_dialog.resize(*geometry)  # Set a default size
+
+        dialog_layout = QVBoxLayout(self.log_dialog)
+
+        log_text_edit = QTextEdit()
+        log_text_edit.setReadOnly(True)
+        log_text_edit.setText(text)
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(log_text_edit)
+
+        dialog_layout.addWidget(scroll_area)
+
+        close_button = QPushButton("Close")
+        close_button.clicked.connect(self.log_dialog.accept)
+        dialog_layout.addWidget(close_button)
+
+        self.log_dialog.exec()  # Use exec() for modal dialog
 
 
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Sound Converter")
+        self.log_messages = []
+        self.setWindowTitle(f"{APP_NAME} - {APP_VERSION}")
         self.setGeometry(400, 400, 500, 200)
+        self.setFixedSize(600, 200)
         self.status_bar = StatusBar("Select a folder with .flac files to convert")
         self.setStatusBar(self.status_bar)
+
+        # Menus set up
+        self.menubar = MenuBar(self)
+        self.setMenuBar(self.menubar)
+        self.menubar.add_menu('&File')
+        self.menubar.add_menu('&?')
+        self.menubar.create_action(self, 'File', 'View Log', self.open_log)
+        self.menubar.create_action(self, '?', 'About', self.show_about_box )
+
         container = QWidget()
         self.layout = QVBoxLayout()
 
@@ -98,7 +161,7 @@ class MainWindow(QMainWindow):
         self.folder_label = QLabel("Source Folder:")
         self.folder_path = QLineEdit()
         self.folder_path.setReadOnly(True)
-        self.open_folder_button = QPushButton("Open Folder")
+        self.open_folder_button = QPushButton("Select Folder")
         self.open_folder_button.clicked.connect(self.open_folder_dialog)
         folder_layout.addWidget(self.folder_label)
         folder_layout.addWidget(self.folder_path)
@@ -129,7 +192,8 @@ class MainWindow(QMainWindow):
 
         # Progress bar
         self.progress_bar = QProgressBar(value=0)
-        self.layout.addWidget(self.progress_bar)
+        # self.layout.addWidget(self.progress_bar)
+        self.status_bar.add_permanent_widget(self.progress_bar)
 
         # Convert button
         self.convert_button = QPushButton("Convert")
@@ -139,7 +203,15 @@ class MainWindow(QMainWindow):
 
         container.setLayout(self.layout)
         self.setCentralWidget(container)
-        self.log_messages = []
+        self.open_folder_button.setFocus()
+
+    @Slot()
+    def show_about_box(self):
+        AboutBox(self, app_params).exec()
+
+    @Slot()
+    def open_log(self):
+        LogWindow(self, 'View Log', (600, 400), '\n'.join(self.log_messages))
 
     @Slot()
     def open_folder_dialog(self):
@@ -204,29 +276,29 @@ class MainWindow(QMainWindow):
         if user_choice != QMessageBox.Yes:
             return
 
-        log_dialog = QDialog(self)
-        log_dialog.setWindowTitle("Conversion Log")
-        log_dialog.resize(600, 400)  # Set a default size
+        LogWindow(self, "Conversion Log", (600, 400), log_text)
+        # log_dialog = QDialog(self)
+        # log_dialog.setWindowTitle("Conversion Log")
+        # log_dialog.resize(600, 400)  # Set a default size
+        #
+        # dialog_layout = QVBoxLayout(log_dialog)
+        #
+        # log_text_edit = QTextEdit()
+        # log_text_edit.setReadOnly(True)
+        # log_text_edit.setText(log_text)
+        #
+        # scroll_area = QScrollArea()
+        # scroll_area.setWidgetResizable(True)
+        # scroll_area.setWidget(log_text_edit)
+        #
+        # dialog_layout.addWidget(scroll_area)
+        #
+        # close_button = QPushButton("Close")
+        # close_button.clicked.connect(log_dialog.accept)
+        # dialog_layout.addWidget(close_button)
 
-        dialog_layout = QVBoxLayout(log_dialog)
+        # log_dialog.exec()  # Use exec() for modal dialog
 
-        log_text_edit = QTextEdit()
-        log_text_edit.setReadOnly(True)
-        log_text_edit.setText(log_text)
-
-        scroll_area = QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(log_text_edit)
-
-        dialog_layout.addWidget(scroll_area)
-
-        close_button = QPushButton("Close")
-        close_button.clicked.connect(log_dialog.accept)
-        dialog_layout.addWidget(close_button)
-
-        log_dialog.exec()  # Use exec() for modal dialog
-
-        self.log_messages = []
 
 
 app = QApplication([])
